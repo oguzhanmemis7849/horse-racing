@@ -17,9 +17,12 @@ declare module 'vue' {
     Horse4SVG: typeof import('./src/components/svg/Horse4SVG.vue')['default']
     HorseComponent: typeof import('./src/components/HorseComponent.vue')['default']
     HorseListComponent: typeof import('./src/components/HorseListComponent.vue')['default']
+    ListComponent: typeof import('./src/components/ListComponent.vue')['default']
     RaceTrackComponent: typeof import('./src/components/RaceTrackComponent.vue')['default']
     RaceTrackRowComponent: typeof import('./src/components/RaceTrackRowComponent.vue')['default']
+    RankingTableComponent: typeof import('./src/components/RankingTableComponent.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    TableComponent: typeof import('./src/components/TableComponent.vue')['default']
   }
 }

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useStore } from 'vuex'
 import type { HorseModel } from '@/types/models'
 import Horse from './HorseComponent.vue'
+import { useStore } from 'vuex'
 
-const props = defineProps<{
+defineProps<{
   rowNumber: number
   horse?: HorseModel
 }>()
@@ -34,7 +34,7 @@ const isRunning = computed<boolean>(() => store.getters.raceStatus === 'running'
 <style scoped lang="scss">
 @import '@/assets/styles/variables';
 
-$lane-height: 64px;
+$lane-height: 68px;
 
 .race-track-row {
   display: flex;
@@ -62,7 +62,7 @@ $lane-height: 64px;
   &__track {
     flex: 1;
     height: $lane-height;
-    border-bottom: 1px dashed #000;
+    border-bottom: 2px dashed #3a3a3a;
     position: relative;
 
     &__horse {

@@ -8,23 +8,29 @@ const store = useStore()
 
 function handleClickGenerateProgram() {
   handleClickPause()
-  //Reset Race
+  // Reset Race
   store.dispatch('resetRace').then(() => {
-    // Rastgele 10 at seç
-    const selectedHorseIdList = new Set<number>()
-    while (selectedHorseIdList.size < MAX_SELECTABLE_HORSE_COUNT) {
-      const randomIndex = Math.floor(Math.random() * store.state.horses.length)
-      const selectedHorse = store.state.horses[randomIndex]
+    // Her tur için rastgele 10 at seç
+    for (let i = 1; i <= store.state.rounds.length; i++) {
+      const selectedHorseIdList = new Set<number>()
+      while (selectedHorseIdList.size < MAX_SELECTABLE_HORSE_COUNT) {
+        const randomIndex = Math.floor(Math.random() * store.state.horses.length)
+        const selectedHorse = store.state.horses[randomIndex]
 
-      if (!selectedHorseIdList.has(selectedHorse.id)) {
-        selectedHorseIdList.add(selectedHorse.id)
-        store.dispatch('selectHorse', selectedHorse)
+        if (!selectedHorseIdList.has(selectedHorse.id)) {
+          selectedHorseIdList.add(selectedHorse.id)
+          store.dispatch('selectHorseForRound', { roundNumber: i, horse: selectedHorse })
+        }
       }
     }
   })
 }
 
 const raceStatus = computed<RaceStatus>(() => store.getters.raceStatus)
+
+const isDisableStartButton = computed<boolean>(() => {
+  return !store.getters.allRoundsHaveHorses
+})
 
 function handleClickStart() {
   store.dispatch('startRace')
@@ -42,13 +48,15 @@ function handleClickPause() {
         <Button severity="secondary" @click="handleClickGenerateProgram">Generate Program</Button>
         <Button
           v-if="raceStatus === 'not_started' || raceStatus === 'paused'"
-          severity="secondary"
+          severity="success"
           @click="handleClickStart"
+          :disabled="isDisableStartButton"
           >Start</Button
         >
-        <Button v-else-if="raceStatus === 'running'" severity="secondary" @click="handleClickPause"
+        <Button v-else-if="raceStatus === 'running'" severity="danger" @click="handleClickPause"
           >Pause</Button
         >
+        <Button v-else @click="handleClickGenerateProgram">Create New Race</Button>
       </div>
     </div>
   </header>

@@ -1,32 +1,35 @@
 <script setup lang="ts">
-import { ref, computed, defineProps, withDefaults } from 'vue'
-import type { HorseModel, RoundNumber, Round } from '@/types/models'
+import { ref, computed } from 'vue'
+import type { HorseModel, RoundNumber, Round, RoundHorseModel } from '@/types/models'
 import { MAX_SELECTABLE_HORSE_COUNT } from '@/constants/horses'
 import RaceTrackRow from './RaceTrackRowComponent.vue'
+import { getOrdinalSuffix } from '@/utils'
 import { useStore } from 'vuex'
 
 const store = useStore()
 
-const horses = computed<HorseModel[]>(() => store.getters.selectedHorses)
+const horses = computed<HorseModel[]>(() => {
+  const round = store.getters.round(store.getters.currentRoundNumber)
+  if (!round) return []
+
+  return round.horseList
+    .map((h: RoundHorseModel) => {
+      const horse = store.getters.randomHorses.find((horse: HorseModel) => horse.id === h.horseId)
+      if (!horse) return null
+
+      return {
+        ...horse,
+        distanceCoveredPercentage: h.distanceCoveredPercentage
+      }
+    })
+    .filter((h: HorseModel) => h !== null) as HorseModel[]
+})
 
 const currentRoundNumber = computed<RoundNumber>(() => store.getters.currentRoundNumber)
 
 const runningRound = computed<Round>(() => {
   return store.getters.round(currentRoundNumber.value)
 })
-
-function getOrdinalSuffix(roundNumber: RoundNumber): string {
-  switch (roundNumber) {
-    case 1:
-      return 'st'
-    case 2:
-      return 'nd'
-    case 3:
-      return 'rd'
-    default:
-      return 'th'
-  }
-}
 </script>
 
 <template>
@@ -54,8 +57,9 @@ function getOrdinalSuffix(roundNumber: RoundNumber): string {
 .race-track {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: start;
   gap: 0.5rem;
+  background-color: #f9f9f9;
   border-radius: $app-border-radius-1;
 
   &__track {

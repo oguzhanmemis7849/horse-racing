@@ -1,19 +1,26 @@
 import type { ActionContext, ActionTree } from 'vuex'
 import type { State } from '@/types/state'
 import type { HorseModel, RoundNumber } from '@/types/models'
-import { MAX_SELECTABLE_HORSE_COUNT } from '@/constants/horses'
-import { MIN_POSITION, MAX_POSITION, TOTAL_ROUND, PROGRESS_QUANTIFIER } from '@/constants/race'
+import { TOTAL_ROUND, PROGRESS_QUANTIFIER } from '@/constants/race'
 
 let raceInterval: NodeJS.Timeout | null = null
 
 const actions: ActionTree<State, State> = {
-  selectHorse({ commit }: ActionContext<State, State>, horse: HorseModel) {
-    commit('selectHorse', horse)
+  // Used to set the list of horses
+  setHorses({ commit }: ActionContext<State, State>, horses: HorseModel[]) {
+    commit('setHorses', horses)
   },
-  resetSelectedHorses({ commit }: ActionContext<State, State>) {
-    commit('resetSelectedHorses')
+
+  // Selects a horse for a particular tour
+  selectHorseForRound(
+    { commit }: ActionContext<State, State>,
+    { roundNumber, horse }: { roundNumber: RoundNumber; horse: HorseModel }
+  ) {
+    commit('selectHorseForRound', { roundNumber, horse })
   },
-  startRace({ commit, state, dispatch, getters }) {
+
+  // It starts the race and updates the horses progress every 500 ms
+  startRace({ commit, state, dispatch, getters }: ActionContext<State, State>) {
     if (state.raceStatus === 'running') return // Yarış zaten devam ediyorsa yeniden başlatmayın
 
     if (state.raceStatus === 'paused') {
@@ -22,97 +29,105 @@ const actions: ActionTree<State, State> = {
       commit('startRace')
     }
 
+    const startTime = Date.now()
+
     raceInterval = setInterval(() => {
-      state.selectedHorses.forEach((horse) => {
-        const currentRound = state.rounds.find(
-          (round) => round.roundNumber === state.currentRoundNumber
-        )
-        if (!currentRound) return
+      const currentRound = state.rounds.find(
+        (round) => round.roundNumber === state.currentRoundNumber
+      )
+      if (!currentRound) return
 
-        const horsePosition = currentRound.horseList.find((element) => element.horseId === horse.id)
-        if (!horsePosition) return
+      currentRound.horseList.forEach((horse) => {
+        const horseData = state.horses.find((h) => h.id === horse.horseId)
+        if (!horseData) return
 
-        if (horsePosition.distanceCoveredPercentage < 100) {
+        if (horse.distanceCoveredPercentage < 100) {
           const roundLength = getters.currentRoundRaceLength // Round length
           const progressPerTick = parseFloat(
-            ((horse.condition / PROGRESS_QUANTIFIER) * (1200 / roundLength)).toFixed(2)
+            ((horseData.condition / PROGRESS_QUANTIFIER) * (1200 / roundLength)).toFixed(2)
           )
           const newDistanceCovered = Math.min(
             100,
-            horsePosition.distanceCoveredPercentage + progressPerTick
+            horse.distanceCoveredPercentage + progressPerTick
           )
           dispatch('updateHorseDistanceCovered', {
-            horseId: horse.id,
+            roundNumber: state.currentRoundNumber,
+            horseId: horse.horseId,
             distanceCoveredPercentage: newDistanceCovered
           })
 
-          dispatch('updateRound', {
-            roundNumber: state.currentRoundNumber,
-            horseId: horse.id,
-            distanceCoveredPercentage: newDistanceCovered
-          })
+          if (newDistanceCovered >= 100) {
+            const finishTime = Date.now() - startTime
+            commit('setHorseFinishTime', {
+              roundNumber: state.currentRoundNumber,
+              horseId: horse.horseId,
+              finishTime
+            })
+          }
         }
       })
 
-      const allHorsesFinished = state.selectedHorses.every((horse) => {
-        const currentRound = state.rounds.find(
-          (round) => round.roundNumber === state.currentRoundNumber
-        )
-        if (!currentRound) return false
-
-        const horsePosition = currentRound.horseList.find((element) => element.horseId === horse.id)
-        return horsePosition && horsePosition.distanceCoveredPercentage >= 100
-      })
+      const allHorsesFinished = currentRound.horseList.every(
+        (horse) => horse.distanceCoveredPercentage >= 100
+      )
 
       if (allHorsesFinished) {
-        commit('nextRound')
-        if (state.currentRoundNumber > TOTAL_ROUND) {
-          clearInterval(raceInterval!)
+        dispatch('calculateRoundResults', state.currentRoundNumber)
+
+        if (state.currentRoundNumber >= TOTAL_ROUND) {
+          if (raceInterval !== null) {
+            clearInterval(raceInterval)
+          }
           raceInterval = null
-          commit('pauseRace')
+          commit('finishRace')
+        } else {
+          commit('nextRound')
         }
       }
     }, 500)
   },
-  pauseRace({ commit }) {
+
+  // Calculate the results of a round
+  calculateRoundResults({ commit, state }: ActionContext<State, State>, roundNumber: RoundNumber) {
+    const round = state.rounds.find((r) => r.roundNumber === roundNumber)
+    if (round) {
+      const sortedFinishTimes = [...round.finishTimes].sort((a, b) => a.finishTime - b.finishTime)
+      const results = sortedFinishTimes.map((entry, index) => ({
+        horseId: entry.horseId,
+        position: index + 1
+      }))
+      commit('setRoundResults', { roundNumber, results })
+    }
+  },
+
+  // It stop the race
+  pauseRace({ commit }: ActionContext<State, State>) {
     if (raceInterval) {
       clearInterval(raceInterval)
       raceInterval = null
     }
     commit('pauseRace')
   },
-  resetRace({ commit }) {
+
+  // It reset the race
+  resetRace({ commit }: ActionContext<State, State>) {
     if (raceInterval) {
       clearInterval(raceInterval)
       raceInterval = null
     }
     commit('resetRace')
   },
-  updateHorseDistanceCovered(
-    { commit, getters },
-    { horseId, distanceCoveredPercentage }: { horseId: number; distanceCoveredPercentage: number }
-  ) {
-    const currentRoundRaceLength = getters.currentRoundRaceLength
 
-    if (distanceCoveredPercentage <= currentRoundRaceLength) {
-      commit('updateHorseDistanceCovered', { horseId, distanceCoveredPercentage })
-    }
-  },
-  updateRound(
-    { commit, getters },
+  // Update the distance traveled for a specific horse
+  updateHorseDistanceCovered(
+    { commit }: ActionContext<State, State>,
     {
       roundNumber,
       horseId,
       distanceCoveredPercentage
     }: { roundNumber: RoundNumber; horseId: number; distanceCoveredPercentage: number }
   ) {
-    const currentRoundRaceLength = getters.currentRoundRaceLength
-    if (distanceCoveredPercentage <= currentRoundRaceLength) {
-      commit('updateRound', { roundNumber, horseId, distanceCoveredPercentage })
-    }
-  },
-  nextRound({ commit }) {
-    commit('nextRound')
+    commit('updateHorseDistanceCovered', { roundNumber, horseId, distanceCoveredPercentage })
   }
 }
 

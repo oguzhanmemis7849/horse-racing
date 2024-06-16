@@ -1,3 +1,5 @@
+import type { RoundNumber } from '@/types/models'
+
 export function shuffleArray(array: any[]): any[] {
   const newArray = array.slice()
 
@@ -7,4 +9,17 @@ export function shuffleArray(array: any[]): any[] {
   }
 
   return newArray
+}
+
+export function getOrdinalSuffix(roundNumber: RoundNumber): string {
+  switch (roundNumber) {
+    case 1:
+      return 'st'
+    case 2:
+      return 'nd'
+    case 3:
+      return 'rd'
+    default:
+      return 'th'
+  }
 }
