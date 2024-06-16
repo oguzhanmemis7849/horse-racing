@@ -12,12 +12,11 @@ defineComponent({
 defineProps<{
   animation: boolean
   color: string
-  horseName: string
 }>()
 </script>
 
 <template>
-  <div class="horse-icon" v-tooltip.top="horseName">
+  <div class="horse-icon">
     <Horse1 :color="color" class="horse-frame frame-1" :class="{ animate: animation }" />
     <Horse2 v-if="animation" :color="color" class="horse-frame frame-2" />
     <Horse3 v-if="animation" :color="color" class="horse-frame frame-3" />

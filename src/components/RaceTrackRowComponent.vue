@@ -25,7 +25,7 @@ const isRunning = computed<boolean>(() => store.getters.raceStatus === 'running'
         class="race-track-row__track__horse"
         :style="{ left: `calc(${horse.distanceCoveredPercentage}% - 2rem)` }"
       >
-        <Horse :animation="isRunning" :color="horse.color" :horse-name="horse.name" />
+        <Horse :animation="isRunning" :color="horse.color" />
       </div>
     </div>
   </div>
