@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import type { HorseModel, RoundNumber, Round, RoundHorseModel } from '@/types/models'
 import { MAX_SELECTABLE_HORSE_COUNT } from '@/constants/horses'
 import RaceTrackRow from './RaceTrackRowComponent.vue'
