@@ -10,7 +10,7 @@ function handleClickGenerateProgram() {
   handleClickPause()
   // Reset Race
   store.dispatch('resetRace').then(() => {
-    // Her tur için rastgele 10 at seç
+    // Select random horses for each round
     for (let i = 1; i <= store.state.rounds.length; i++) {
       const selectedHorseIdList = new Set<number>()
       while (selectedHorseIdList.size < MAX_SELECTABLE_HORSE_COUNT) {
