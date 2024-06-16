@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineComponent, defineProps } from 'vue'
+import { defineComponent } from 'vue'
 import Horse1 from './svg/Horse1SVG.vue'
 import Horse2 from './svg/Horse2SVG.vue'
 import Horse3 from './svg/Horse3SVG.vue'

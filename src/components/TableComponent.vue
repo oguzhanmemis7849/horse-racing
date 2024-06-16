@@ -3,12 +3,11 @@ withDefaults(
   defineProps<{
     list: any[]
     columns: { field: string; header: string; sortable: boolean }[]
-    title: string | null
-    subTitle: string | null
-    subTitleBackgroundColor: string | null
-    titleBackgroundColor: string
-    tableHeaderBackgroundColor: string
-    rowSize: 'small' | 'large'
+    title?: string | null
+    subTitle?: string | null
+    subTitleBackgroundColor?: string | null
+    titleBackgroundColor?: string
+    rowSize?: 'small' | 'large'
   }>(),
   {
     list: () => [],
@@ -17,7 +16,6 @@ withDefaults(
     subTitle: null,
     subTitleBackgroundColor: null,
     titleBackgroundColor: '#ffeb3b',
-    tableHeaderBackgroundColor: 'red',
     rowSize: 'large'
   }
 )
